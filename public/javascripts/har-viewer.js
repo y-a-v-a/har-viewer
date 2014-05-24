@@ -1,20 +1,55 @@
+/* jshint laxcomma: true */
+/* global google */
 document.getElementById('har').addEventListener('change', handleFileSelect, false);
 
 google.load("visualization", "1", {
 	packages: ["corechart"]
 });
 
-//google.setOnLoadCallback(drawChart);
+var Stack = (function() {
+    var dataHeader = ['Time#Duration'.split('#')];
+    var data = [];
+    var stackContainer = document.getElementById('stack');
+    var chart;
+    var options = {};
+
+    return {
+        init: function() {
+            chart = new google.visualization.AreaChart(stackContainer);
+        },
+        addDataToStack: function(newData) {
+            data = data.concat(newData);
+            data.sort(function(a, b) {
+                if (a[0] < b[0]) {
+                    return -1;
+                }
+                if (a[0] > b[0]) {
+                    return 1;
+                }
+                return 0;
+            });
+            var dataTable = google.visualization.arrayToDataTable(dataHeader.concat(data));
+            chart.clearChart();
+            chart.draw(dataTable, options);
+        }
+    };
+}());
+
+google.setOnLoadCallback(Stack.init);
 
 function handleFileSelect(ev) {
-	var file = ev.target.files[0];
+    'use strict';
+    var files = ev.target.files, file, reader, i = 0;
+    for(; i < files.length; i++) {
+    	file = ev.target.files[i]
+        , reader = new FileReader();
 
-	var reader = new FileReader();
-	reader.onload = handleContents;
-	reader.onerror = function() {
-		alert('Error reading file...');
-	};
-	reader.readAsText(file);
+    	reader.onload = handleContents;
+    	reader.onerror = function() {
+    		alert('Error reading file...');
+    	};
+    	reader.readAsText(file);
+    }
 }
 
 function handleContents(ev) {
@@ -27,6 +62,11 @@ function handleContents(ev) {
 	
     for (var j = 0; j < pages.length; j++) {
         entries = getEntriesForPage(j, har);
+        if (!!document.getElementById('p' + pages[j]._date)) {
+            continue;
+        }
+        Stack.addDataToStack(getTimingsForPage(pages[j]));
+
         wrapper = createContainer('p' + pages[j]._date, 'charts');
         appendBasicData(pages[j], wrapper);
         for (var i = 0; i < infos.length; i++) {
@@ -37,7 +77,7 @@ function handleContents(ev) {
 
 function appendBasicData(page, parent) {
     var meta = document.createElement('div');
-    meta.innerHTML = page._URL + ' in ' + page._browser_name + ' ' + page._browser_version;
+    meta.innerHTML = page._URL + '<br>in ' + page._browser_name + ' ' + page._browser_version;
     meta.style.fontSize = '10px';
     parent.appendChild(meta);
 }
@@ -58,8 +98,9 @@ function drawChart(data, id, parent) {
 	, options = {
       title: id,
       legend: 'none',
-      width: 256,
-      height: 256
+      width: 200,
+      height: 200,
+      pieSliceText: 'label'
     },
     target = createContainer(id, parent);
 
@@ -132,3 +173,12 @@ var infos = [
 		return data;
 	}]
 ];
+
+
+
+function getTimingsForPage(page) {
+    var data = [];
+    data.push([ page._date / 1000, page._fullyLoaded / 1000 ]);
+    return data;
+}
+

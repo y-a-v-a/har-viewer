@@ -6,9 +6,10 @@
   </head>
   <body>
     <h1><%= title %></h1>
-	<input type="file" name="har" id="har">
+	<input type="file" name="har[]" id="har" multiple>
     <div id="charts"></div>
 
+    <div id="stack"></div>
 	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 	<script src="/javascripts/har-viewer.js"></script>
   </body>
