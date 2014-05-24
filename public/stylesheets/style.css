@@ -1,8 +1,19 @@
 body {
-  padding: 50px;
+  padding: 0;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  overflow-x: scroll;
 }
 
 a {
   color: #00B7FF;
+}
+
+#charts > div {
+    display: inline-block;
+    border: 1px solid #eee;
+    white-space: nowrap;
+}
+
+#charts > div * {
+    white-space: normal;
 }

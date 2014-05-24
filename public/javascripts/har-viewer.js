@@ -1,6 +1,10 @@
 document.getElementById('har').addEventListener('change', handleFileSelect, false);
 
-//var piechart = document.getElementById('piechart');
+google.load("visualization", "1", {
+	packages: ["corechart"]
+});
+
+//google.setOnLoadCallback(drawChart);
 
 function handleFileSelect(ev) {
 	var file = ev.target.files[0];
@@ -16,53 +20,56 @@ function handleFileSelect(ev) {
 function handleContents(ev) {
 	var data = ev.target.result;
 
-	var har = JSON.parse(data);
-	var entries = getEntriesForPage("page_1_1", har);
-//	var statuses = retrieveSatusesFromEntries(entries);
-	// console.log(statuses);
-//	drawChart(statuses, createContainer('test'));
+	var har = JSON.parse(data)
+    , entries
+    , wrapper
+    , pages = har.log.pages || [];
 	
-	// for (var i = 0; i < infos; i++) {
-		console.log(infos[0][0]);
-		drawChart(infos[0][1](entries), createContainer(infos[0][0]));
-	// }
+    for (var j = 0; j < pages.length; j++) {
+        entries = getEntriesForPage(j, har);
+        wrapper = createContainer('p' + pages[j]._date, 'charts');
+        appendBasicData(pages[j], wrapper);
+        for (var i = 0; i < infos.length; i++) {
+            drawChart(infos[i][1](entries), infos[i][0], wrapper.id);
+        }
+    }
 }
 
-function createContainer(id) {
+function appendBasicData(page, parent) {
+    var meta = document.createElement('div');
+    meta.innerHTML = page._URL + ' in ' + page._browser_name + ' ' + page._browser_version;
+    meta.style.fontSize = '10px';
+    parent.appendChild(meta);
+}
+
+function createContainer(id, parent) {
 	var div = document.createElement('div');
 	div.id = id.replace(' ',  '-').toLowerCase();
-	document.body.appendChild(div);
+    if (parent === undefined) {
+        document.body.appendChild(div);
+    } else {
+        document.getElementById(parent).appendChild(div);
+    }
 	return div;
 }
 
-////
-
-
-google.load("visualization", "1", {
-	packages: ["corechart"]
-});
-
-//google.setOnLoadCallback(drawChart);
-
-function drawChart(data, target) {
+function drawChart(data, id, parent) {
 	var dataTable = google.visualization.arrayToDataTable(data)
-	, options = {};
-	//   title: 'My Daily Activities'
-	// };
+	, options = {
+      title: id,
+      legend: 'none',
+      width: 256,
+      height: 256
+    },
+    target = createContainer(id, parent);
 
 	var chart = new google.visualization.PieChart(target);
 	chart.draw(dataTable, options);
 }
 
-
-/////
-
-function getPagesInHar(har) {
-	return har.log.pages.length;
-}
-
-function getEntriesForPage(id, har) {
-	var entries = har.log.entries, i = 0, entriesForPage = [];
+function getEntriesForPage(j, har) {
+	var entries = har.log.entries, i = 0, entriesForPage = [],
+    id = har.log.pages[j].id;
 	for (;i < entries.length;i++) {
 		if (entries[i].pageref === id) {
 			entriesForPage.push(entries[i]);
@@ -74,7 +81,7 @@ function getEntriesForPage(id, har) {
 var infos = [
 
 	['Response Codes', function retrieveSatusesFromEntries(entries) {
-		var responses = {}, data = [['Response code', 'Amount']], i = 0, responseCode;
+		var responses = {}, data = ['Response code#Amount'.split('#')], i = 0, responseCode;
 		for (; i < entries.length; i++) {
 			responseCode = "" + entries[i].response.status;
 			if (responses[responseCode] === undefined) {
@@ -82,16 +89,16 @@ var infos = [
 			}
 			responses[responseCode] += 1;
 		}
-		for ( var d in responses) {
-			if (responses.hasOwnProperty(d)) {
-				data.push([d, responses[d]]);
+		for ( var p in responses) {
+			if (responses.hasOwnProperty(p)) {
+				data.push([p, responses[p]]);
 			}
 		}
 		return data;
 	}],
 
-	['Data per Mime type', function retrieveSizePerMimeType(entries) { // @TODO create google proof response
-		var mimes = {}, i = 0, contentType, size;
+	['Data per Mime type', function retrieveSizePerMimeType(entries) {
+		var mimes = {}, data = ['Mime type#Size'.split('#')], i = 0, contentType, size;
 		for (; i < entries.length; i++) {
 			contentType = entries[i].response.content.mimeType;
 			size = entries[i].response.content.size;
@@ -100,11 +107,16 @@ var infos = [
 			}
 			mimes[contentType] += size;
 		}
-		return mimes;
+        for (var p in mimes) {
+            if (mimes.hasOwnProperty(p)) {
+                data.push([p, mimes[p]]);
+            }
+        }
+		return data;
 	}],
 
-	['Requests per host', function requestsPerHost(entries) { // @TODO create google proof response
-		var requests = {}, i = 0, host;
+	['Requests per host', function requestsPerHost(entries) {
+		var requests = {}, data = ['Host#Amount'.split('#')], i = 0, host;
 		for (; i < entries.length; i++) {
 			host = entries[i]._host;
 			if (requests[host] === undefined) {
@@ -112,6 +124,11 @@ var infos = [
 			}
 			requests[host] += 1;
 		}
-		return requests;
+        for (var p in requests) {
+            if (requests.hasOwnProperty(p)) {
+                data.push([p, requests[p]]);
+            }
+        }
+		return data;
 	}]
 ];
