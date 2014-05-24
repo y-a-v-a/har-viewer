@@ -1,5 +1,6 @@
 /* jshint laxcomma: true */
 /* global google */
+
 document.getElementById('har').addEventListener('change', handleFileSelect, false);
 
 google.load("visualization", "1", {
@@ -7,11 +8,15 @@ google.load("visualization", "1", {
 });
 
 var Stack = (function() {
-    var dataHeader = ['Time#Duration'.split('#')];
+    var dataHeader = ['Date Duration'.split(' ')];
     var data = [];
     var stackContainer = document.getElementById('stack');
     var chart;
-    var options = {};
+    var options = {
+        hAxis: {
+            title: 'Time'
+        }
+    };
 
     return {
         init: function() {
@@ -157,7 +162,7 @@ var infos = [
 	}],
 
 	['Requests per host', function requestsPerHost(entries) {
-		var requests = {}, data = ['Host#Amount'.split('#')], i = 0, host;
+		var requests = {}, data = ['Host Amount'.split(' ')], i = 0, host;
 		for (; i < entries.length; i++) {
 			host = entries[i]._host;
 			if (requests[host] === undefined) {
@@ -178,7 +183,9 @@ var infos = [
 
 function getTimingsForPage(page) {
     var data = [];
-    data.push([ page._date / 1000, page._fullyLoaded / 1000 ]);
+    var date = new Date();
+    date.setTime(page._date * 1000);
+    data.push([ date, page._fullyLoaded / 1000 ]);
     return data;
 }
 

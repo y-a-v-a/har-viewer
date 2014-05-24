@@ -8,8 +8,11 @@ a {
   color: #00B7FF;
 }
 
+#charts {
+    white-space: nowrap;
+}
+
 #charts > div {
     display: inline-block;
     border: 1px solid #eee;
-    white-space: nowrap;
 }
